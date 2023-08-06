@@ -1,65 +1,61 @@
-const express = require('express');
-const cors = require('cors');
-const multer = require('multer');
-const libreofficeConvert = require('libreoffice-convert');
-const fs = require('fs');
-const path = require('path');
+const express = require('express')
+const cors = require('cors')
+const fs = require('fs')
+const libreoffice = require('libreoffice-convert')
+const path = require('path')
+const multer = require('multer')
 
-const app = express();
-const port = 3000;
+const PORT = process.env.PORT || 3500
+const app = express()
+app.use(cors())
 
-// Configure Multer to handle file uploads
-const upload = multer({ dest: 'uploads/' });
 
-// Enable CORS to allow cross-origin requests from the frontend
-app.use(cors());
+app.use('/', express.static(path.join(__dirname, 'public')))
 
-// Serve the frontend HTML file
-app.use(express.static(path.join(__dirname, 'public')));
+const upload = multer({ dest: 'uploads/' })
 
-// Endpoint to handle file upload and conversion
-app.post('/convert', upload.single('file'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
+app.post('/convert', upload.single('file'), (req, res)=> {
+  if(!req.file){
+    return res.status(400).json({ error: "No file Uploaded" })
+
   }
-
-  if (req.file.mimetype !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-    return res.status(400).json({ error: 'Invalid file type. Only DOCX files are allowed' });
+  if (req.file.mimetype !== 'application/vnd.openxmlformats-officedocumet.wordprocessingml.document'){
+    return res.status(400).json({ error: "Invalid File Type. Only docx files are allowed"})
   }
-
-  const inputPath = req.file.path;
-  const outputPath = `${inputPath}.pdf`;
+  const inputPath = req.file.path
+  const outputPath = `${inputPath}.pdf`
 
   const options = {
     format: 'pdf',
-    output: outputPath,
-  };
+    output: outputPath
+  }
 
-  libreofficeConvert.convert(inputPath, options, (err, result) => {
-    if (err) {
-      console.error('Conversion error:', err);
-      return res.status(500).json({ error: 'Error converting file' });
+  libreoffice.convert(inputPath, options, (err, result)=> {
+    if(err){
+      console.error('Conversion error:',err)
+      return res.status(500).json({ error: 'Error Converting file' })
     }
-
-    console.log('Conversion successful');
-    fs.readFile(outputPath, (err, data) => {
-      if (err) {
-        console.error('Error reading converted file:', err);
-        return res.status(500).json({ error: 'Error reading converted file' });
+    console.log('Conversion Successful')
+    fs.readFile(outputPath, (err, data)=> {
+      if(err){
+        console.error('Error Reading converted file:', err)
+        return res.status(500).json({error: 'Error reading converted file'})
       }
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename=${req.file.originalname}.pdf`);
-      res.send(data);
-
-      // Cleanup: delete the temporary input and output files
+      res.setHeader('Content-Type', 'application/pdf')
+      res.setHeader('Content-Disposition', `attachment; filename=${req.file.originalname}.pdf`)
+      res.send(data)
       fs.unlinkSync(inputPath);
       fs.unlinkSync(outputPath);
-    });
-  });
-});
+    })
+  })
+})
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+
+
+
+
+
+
+
+
+app.listen(PORT, () => {console.log(`Server started at ${PORT}`)})

@@ -1,71 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>DOCX to PDF Converter</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 20px;
-    }
-    #uploadForm {
-      margin: 20px;
-    }
-    #conversionResult {
-      margin: 20px;
-      display: none;
-    }
-  </style>
+  <title>Word to PDF Converter</title>
 </head>
 <body>
-  <h1>DOCX to PDF Converter</h1>
-  <div id="uploadForm">
-    <p>Select a DOCX file to convert to PDF:</p>
-    <input type="file" id="fileInput">
-    <button id="convertBtn">Convert to PDF</button>
-  </div>
-  <div id="conversionResult">
-    <p>Conversion successful! Click below to download the PDF:</p>
-    <a id="downloadLink" href="#" download>Download PDF</a>
-  </div>
+  <h1>Word to PDF Converter</h1>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="file" id="fileInput" accept=".docx">
+    <button type="submit">Convert to PDF</button>
+  </form>
+
+  <div id="output"></div>
 
   <script>
+    const uploadForm = document.getElementById('uploadForm');
     const fileInput = document.getElementById('fileInput');
-    const convertBtn = document.getElementById('convertBtn');
-    const conversionResult = document.getElementById('conversionResult');
-    const downloadLink = document.getElementById('downloadLink');
+    const outputDiv = document.getElementById('output');
 
-    convertBtn.addEventListener('click', () => {
-      const file = fileInput.files[0];
-      if (!file) {
-        alert('Please select a file to convert.');
-        return;
-      }
+    uploadForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const formData = new FormData(uploadForm);
 
-      const formData = new FormData();
-      formData.append('file', file);
-
-      fetch('/convert', {
+      fetch('http://localhost:3500/convert', {
         method: 'POST',
         body: formData,
       })
-      .then(response => {
+      .then((response) => {
         if (!response.ok) {
-          throw new Error('Conversion failed. Please ensure you selected a valid DOCX file.');
+          throw new Error('Conversion failed');
         }
         return response.blob();
       })
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        downloadLink.href = url;
-        downloadLink.style.display = 'block';
-        downloadLink.click();
-        URL.revokeObjectURL(url);
-        conversionResult.style.display = 'block';
+      .then((pdfBlob) => {
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        const pdfLink = document.createElement('a');
+        pdfLink.href = pdfUrl;
+        pdfLink.setAttribute('target', '_blank');
+        pdfLink.textContent = 'Download PDF';
+        outputDiv.innerHTML = '';
+        outputDiv.appendChild(pdfLink);
       })
-      .catch(error => {
-        alert(error.message);
-        console.error(error);
+      .catch((error) => {
+        console.error('Error:', error);
+        outputDiv.textContent = 'Error converting file';
       });
     });
   </script>
